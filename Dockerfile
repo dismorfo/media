@@ -12,7 +12,7 @@ LABEL maintainer="dismorfo@gmail.com"
 LABEL version="1.0"
 
 # Blame OpenShift (or me because I don't know better)
-USER root
+# USER root
 
 # install the PHP extensions we need
 RUN set -eux; \
