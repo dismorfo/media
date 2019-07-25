@@ -11,6 +11,9 @@ LABEL maintainer="dismorfo@gmail.com"
 
 LABEL version="1.0"
 
+# Blame OpenShift (or me because I don't know better)
+USER root
+
 # install the PHP extensions we need
 RUN set -eux; \
 	\
@@ -55,17 +58,16 @@ RUN set -eux; \
 		| xargs -rt apt-mark manual; \
 	\
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*
+	rm -rf /var/lib/apt/lists/* ; \
 
-# set recommended PHP.ini settings
-# see https://secure.php.net/manual/en/opcache.installation.php
-RUN { \
-		echo 'opcache.memory_consumption=128'; \
-		echo 'opcache.interned_strings_buffer=8'; \
-		echo 'opcache.max_accelerated_files=4000'; \
-		echo 'opcache.revalidate_freq=60'; \
-		echo 'opcache.fast_shutdown=1'; \
-	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
+  # set recommended PHP.ini settings
+  # see https://secure.php.net/manual/en/opcache.installation.php
+    echo 'opcache.memory_consumption=128'; \
+    echo 'opcache.interned_strings_buffer=8'; \
+    echo 'opcache.max_accelerated_files=4000'; \
+    echo 'opcache.revalidate_freq=60'; \
+    echo 'opcache.fast_shutdown=1'; \
+  } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 COPY ./drupal /var/www/html
 
