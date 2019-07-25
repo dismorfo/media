@@ -4,11 +4,6 @@ services:
 
   drupal:
     image: dismorfo/media:latest
-    ports:
-      - 8000:80
-    volumes:
-      - ./drupal:/var/www/html
-      - ./drush-6.3.0:/drush
     restart: always
     environment:
       PHP_SENDMAIL_PATH: /usr/sbin/sendmail -t -i -S mailhog:1025
