@@ -1,0 +1,4 @@
+name = dlts_interview
+description = Structured data about media clip.
+core = 7.x
+package = DLTS

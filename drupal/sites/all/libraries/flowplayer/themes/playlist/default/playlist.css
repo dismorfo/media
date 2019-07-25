@@ -1,0 +1,156 @@
+/*{{{ general playlist settings, light gray */
+
+.playlist {
+  float: left;
+  background-position:0px -18px;		
+  width:260px;	  
+  position:relative;
+  overflow:hidden;	 	
+  height:285px !important;	
+  position:absolute;
+  height:20000em;	
+}
+
+.playlist a {
+	background:url(images/gradient-h80.png);
+	background-color:transparent;
+	display:block;
+	padding:12px 15px;
+	height:46px;
+	width:223px;
+	font-size:12px;	
+	text-decoration:none;
+	letter-spacing:-1px;
+	color:#000;
+	cursor:pointer;
+}
+
+.playlist a.first {
+	border-top-width:1px;
+}
+
+.playlist a.playing,
+.playlist a.paused,
+.playlist a.progress {
+	background: url(images/playlist-light.png) no-repeat 0px -69px;
+	width:225px;
+	border:0;
+}
+	
+.playlist a.progress {
+	opacity:0.6;
+}
+
+.playlist a.paused {
+	background-position:0 0;	
+}
+
+.playlist a span {
+	display:block;		
+	font-size:11px;
+	color:#666;
+}
+
+.playlist a em {
+	font-style:normal;
+	color:#f00;
+	display: block;
+	font-size: x-small;
+}	
+
+.playlist a:hover {
+  opacity:0.8;
+}
+
+.playlist a.playing:hover, 
+.playlist a.paused:hover, 
+.playlist a.progress:hover {
+	background-color:transparent;
+}
+
+/*}}}*/
+
+
+/*{{{ low version */
+
+.playlist.low a {
+  background-image:url(images/playlist-light-small.png);
+  background-position:0 0px;
+  height:31px;  
+}
+
+.playlist.low a.playing, 
+.playlist.low a.progress {
+  background-position:0 -55px;
+}
+
+/*}}}*/
+
+
+/*{{{ go buttons */
+
+.playlist a.go {
+	display:block;
+	width:18px;
+	height:18px;
+	background:url(images/arrow-up.png) no-repeat;
+	margin:5px 0 5px 105px;
+	cursor:pointer;
+}
+
+.playlist a.go:hover,
+.playlist a.go.down:hover {
+  background-position:0px -18px;
+}
+
+.playlist a.go.down {
+  background-image:url(images/arrow-down.png);	
+}
+
+.playlist.petrol a.go {
+  background-image:url(images/arrow-up-dark.png;		
+}
+
+.playlist.petrol a.go.down {
+  background-image:url(images/arrow-down-dark.png);		
+}
+
+.playlist a.go.disabled {
+	visibility:hidden;		
+}
+
+/*}}}*/
+
+/*
+ * Player container
+ *  
+ */
+
+.flowplayer {	
+  display:block;
+  width:500px;
+  height:340px;
+  text-align:center;
+  color:#fff;
+  text-decoration:none;
+  cursor:pointer;
+  background:#000 url(images/gradient-h500.png) repeat-x 0 0;
+  background:-moz-linear-gradient(top, rgba(55, 102, 152, 0.9), rgba(6, 6, 6, 0.9));
+  -moz-box-shadow:0 0 40px rgba(100, 118, 173, 0.5);
+}
+
+.flowplayer:hover {
+  background:-moz-linear-gradient(center top, rgba(73, 122, 173, 0.898), rgba(6, 6, 6, 0.898));	
+}
+
+/* splash image */
+
+.flowplayer img {
+  margin-top:125px;
+  border:0;	
+}
+
+.flowplayer {
+  margin-top:0px;
+  width:475px;		
+}

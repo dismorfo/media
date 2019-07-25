@@ -1,0 +1,4 @@
+name = RESTful custom
+description = Custom RESTful resource.
+core = 7.x
+dependencies[] = restful

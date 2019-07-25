@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * @file
+ * Install file for the clip module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ * https://api.drupal.org/api/drupal/modules!field!field.api.php/function/hook_field_schema/7
+ */
+function dlts_track_field_schema($field) {
+  return array(
+    'columns' => array(
+      'src' => array(
+        'type' => 'varchar',
+        'length' => 200,
+        'not null' => TRUE,
+      ),
+      'kind' => array(
+        'type' => 'varchar',
+        'length' => 2048,
+        'not null' => FALSE,
+      ),
+      'srclang' => array(
+    	'type' => 'varchar',
+    	'length' => 2048,
+    	'not null' => FALSE,
+      ),
+      'label' => array(
+        'type' => 'varchar',
+    	  'length' => 2048,
+    	  'not null' => FALSE,
+      ),
+      'default' => array(
+        'type' => 'varchar',
+    	  'length' => 2048,
+    	  'not null' => FALSE,
+      ),
+    ),
+  );
+}

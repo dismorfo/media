@@ -1,0 +1,12 @@
+name = DLTS Media Embed
+description = Clean embed theme.
+base theme = tao
+core = 7.x
+engine = phptemplate
+
+; Add a style sheet for all media
+stylesheets[all][] = mediaembed.css
+
+regions[content] = Content
+
+; scripts[] = mediaembed.js

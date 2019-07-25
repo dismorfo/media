@@ -1,0 +1,85 @@
+#branding .login {
+  margin-top: .5em;
+  float: right;
+  padding-right: 1em;  
+}
+
+#branding .login a {
+  color: #fff;
+}
+
+#branding .login a:hover {
+  text-decoration: underline;
+}
+
+.not-logged-in .login_block {
+  position: fixed;
+  top: 10px;
+  right: 5px;
+  width: 400px;
+  background-color: white;
+  z-index: 9999;
+}
+
+.not-logged-in .login_block form {
+  border-radius: 4px;
+  box-shadow: 0 1px 3px;
+  border-radius: 0 0 4px 4px;  
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.not-logged-in .login_block form .form-item {
+  border-width: 0;
+  padding: 0 9px;
+}
+
+.not-logged-in .login_block form .form-item-name {
+  padding-top: 9px;  
+}
+
+.login_block li {
+  display: inline-block !important;
+  border-style: initial !important;
+  border-color: initial !important;
+}
+
+.not-logged-in .messages.error {
+  display: none;
+  visibility: hidden;
+}
+
+.column-side {
+  display: none;
+  visibility:hidden;	
+}
+
+.column-main {
+  width:100%;	
+}
+
+.block, .node {
+  border: none ;
+}
+
+.node {
+  background-image: none !important;  
+}
+
+#block-menu-menu-content .menu li {
+  float:left;
+  border-bottom: none;	
+}
+
+#block-menu-menu-content .menu li.first.leaf {
+  padding-left: 0;
+}
+
+#block-menu-menu-content a:hover {
+  text-decoration: underline; 
+}
+
+#page-title {
+  display: none;
+  visibility:hidden;	
+}

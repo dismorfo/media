@@ -1,0 +1,11 @@
+name = Media Views
+core = 7.x
+package = DLTS
+dependencies[] = views
+dependencies[] = views_json
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = clip_by_identifier
+features[views_view][] = clips_by_collection
+features[views_view][] = collection_playlist
+features_exclude[dependencies][ctools] = ctools

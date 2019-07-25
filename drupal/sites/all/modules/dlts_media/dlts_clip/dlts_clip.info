@@ -1,0 +1,13 @@
+name = DLTS Playable Media
+description = Structured data about media clip.
+core = 7.x
+package = DLTS
+
+dependencies[] = libraries
+dependencies[] = mobile_detect
+dependencies[] = entity
+
+; Add a style sheet for print media
+stylesheets[all][] = css/dlts_clip.css
+
+scripts[] = js/dlts_clip.js

@@ -1,0 +1,6 @@
+name = DLTS Track
+description = DLTS Track field.
+core = 7.x
+package = DLTS
+
+dependencies[] = entity

@@ -1,0 +1,371 @@
+<?php
+
+/**
+ * Implements hook_field_info().
+ */
+function dlts_track_field_info() {
+  return array(
+    'dlts_track_field' => array(
+      'label' => t('DLTS Track'),
+      'description' => t('Store data used to specify external timed text tracks for media elements.'),
+      'default_widget' => 'dlts_track_field',
+      'default_formatter' => 'dlts_track_default_formatter',
+      /** Support hook_entity_property_info() from contrib "Entity API". */
+      'property_type' => 'dlts_track_field',
+      'property_callbacks' => array('dlts_track_field_property_info_callback'),
+    ),
+  );
+}
+
+/**
+ * Additional callback to adapt the property info of fileserver fields.
+ *
+ * @see entity_metadata_field_entity_property_info()
+ */
+function dlts_track_field_property_info_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+  // Define a data structure so it's possible to deal with the field values.
+  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+  // Auto-create the field item as soon as a property is set.
+  $property['auto creation'] =  'dlts_track_field_item_create';
+  $property['property info'] = dlts_track_field_item_property_info();
+  unset($property['query callback']);
+}
+
+/**
+ * Callback for creating a new, empty link field item.
+ *
+ * @see link_field_property_info_callback()
+ */
+function dlts_track_field_item_create() {
+  // https://www.quackit.com/html/tags/html_track_tag.cfm
+  return array(
+    /** 
+     * Specifies the URL of the text track data. Required attribute.
+     */
+    'src' => NULL,
+    /** 
+     * Specifies the kind of text track. This attribute is an 
+     * enumerated attribute.
+     * The possible values for the "kind" attribute are:
+     *  - subtitles
+     *  -- Transcription or translation of the dialogue. 
+     *  - captions
+     *  -- Transcription or translation of the dialogue, sound effects, 
+     *  -- relevant musical cues, and other relevant audio information.
+     *  - descriptions
+     *  -- Textual descriptions of the video component of the media 
+     *     resource, intended for audio synthesis when the visual component 
+     *     is obscured, unavailable, or not usable (e.g. because the user   
+     *     is interacting with the application without a screen while driving, 
+     *     or because the user is blind). Any descriptions are synthesized as audio.
+     *  - chapters
+     *  --  Chapter titles, intended to be used for navigating the media resource
+     *  - metadata
+     *  -- Tracks intended for use from script. Not displayed by the user agent.
+     */
+    'kind' => NULL,
+    /**
+     * Specifies the language of the text track. The value must be a valid BCP 47 
+     * language tag. This attribute is required if the element's kind 
+     * attribute is "subtitles".
+     */
+    'srclang' => NULL,
+    /** 
+     * Provides a user-readable title for the track.
+     */    
+    'label' => NULL,
+    /** 
+     * Specifies that the track is to be enabled if the user's preferences
+     * do not indicate that another track would be more appropriate. There 
+     * must not be more than one track element with the same parent 
+     * node with the default attribute specified.
+     */    
+    'default' => NULL,
+  );
+}
+
+/**
+ * Defines info for the properties of the link-field item data structure.
+ */
+function dlts_track_field_item_property_info() {
+  $properties = array();
+  $properties['src'] = array(
+    'type' => 'varchar',
+    'label' => t('Specifies the URL of the text track data'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  $properties['kind'] = array(
+    'type' => 'varchar',
+    'label' => t('Specifies the kind of text track'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  $properties['srclang'] = array(
+    'type' => 'varchar',
+    'label' => t('Specifies the language of the text track'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  $properties['label'] = array(
+    'type' => 'varchar',
+    'label' => t('Provides a user-readable title for the track.'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  $properties['default'] = array(
+    'type' => 'varchar',
+    'label' => t('Specifies that the track is to be enabled'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  return $properties;
+}
+
+/**
+ * Implements hook_field_widget_error().
+ */
+function dlts_track_field_widget_error($element, $error, $form, &$form_state) {
+  form_error($element, $error['message']);
+}
+
+/**
+ * Entity property info getter callback for attributes.
+ */
+function dlts_track_field_attribute_property_get($data, array $options, $name, $type, $info) {
+  return isset($data[$name]) ? array_filter($data[$name]) : array();
+}
+
+/**
+ * Implements hook_theme().
+ */
+function dlts_track_theme($existing, $type, $theme, $path) {
+  return array(
+    'dlts_track_media' => array(
+      'variables' => array(
+        'src' => NULL,
+        'kind' => NULL,
+        'srclang' => NULL,
+        'label' => NULL,
+        'default' => NULL,
+      ),
+    )
+  );
+}
+
+/**
+ * Implements hook_field_validate().
+ */
+function dlts_track_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  // I need to write a test for 'default'and olny allow 1 default per field
+  // $default_true = 0;
+  foreach ($items as $delta => $item) {
+    if (!empty($item['src'])) {
+      if (!valid_url($item['src'], TRUE)) {
+        $errors[$field['field_name']][$langcode][$delta][] = array('message' => 'Attribute "src" is not a valid URL.');      
+      }
+      if (valid_url($item['src'], TRUE)) {
+        $pathinfo = pathinfo($item['src']);
+        if ($pathinfo['extension'] != 'vtt') {
+          $errors[$field['field_name']][$langcode][$delta][] = array('message' => 'Attribute "src" does not contain a valid URL with a VTT resource.');
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implement hook_field_is_empty().
+ */
+function dlts_track_field_is_empty($item, $field) {
+  return empty($item['src']);
+}
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function dlts_track_field_formatter_info() {
+  return array(
+    'dlts_track_default_formatter' => array(
+      'label' => t('Default'),
+      'field types' => array('dlts_track_field'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ *
+ */
+function dlts_track_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch ($display['type']) {
+    case 'dlts_track_default_formatter':
+      foreach ($items as $delta => $item) {
+        $element[$delta]['#markup'] = theme('dlts_track_media' , $item);
+      }
+      break;
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function dlts_track_field_widget_info() {
+  return array(
+    'dlts_track_default' => array(
+      'label' => t('Used to specify external timed text tracks for media elements'),
+      'field types' => array('dlts_track_field'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function dlts_track_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $element += array(
+    '#delta' => $delta,
+    '#type' => 'fieldset',
+    'src' => array(
+      '#type' => 'textfield',
+      '#title' => 'Specifies the URL of the text track data',
+      '#size' => 50,
+      '#default_value' => isset($items[$delta]['src']) ? $items[$delta]['src'] : '',
+      '#attributes' => array(
+        'placeholder' => 'http://example.com/track.vtt',
+      ),
+    ),
+    'kind' => array(
+      '#type' => 'textfield',
+      '#title' => 'Specifies the kind of text track (subtitles, captions, descriptions, chapters, metadata)',
+      '#size' => 50,
+      '#default_value' => isset($items[$delta]['kind']) ? $items[$delta]['kind'] : '',
+      '#attributes' => array(
+        'placeholder' => 'captions',
+      ),
+    ),
+    'srclang' => array(
+      '#type' => 'textfield',
+      '#title' => 'Specifies the language of the text track',
+      '#size' => 50,
+      '#default_value' => isset($items[$delta]['srclang']) ? $items[$delta]['srclang'] : '',
+      '#attributes' => array(
+        'placeholder' => 'en',
+      ),
+    ),
+    'label' => array(
+      '#type' => 'textfield',
+      '#title' => 'Provides a user-readable title for the track.',
+      '#size' => 50,
+      '#default_value' => isset($items[$delta]['label']) ? $items[$delta]['label'] : '',
+      '#attributes' => array(
+        'placeholder' => 'English',
+      ),
+    ),
+    'default' => array(
+      '#type' => 'textfield',
+      '#title' => "Specifies that the track is to be enabled if the user's preferences do not indicate that another track would be more appropriate.",
+      '#size' => 50,
+      '#default_value' => isset($items[$delta]['default']) ? $items[$delta]['default'] : '',
+      '#attributes' => array(
+        'placeholder' => '',
+      ),
+    ),
+  );
+  return $element;
+}
+
+/**
+ * Implements hook_field_instance_settings_form().
+ * See: https://api.drupal.org/api/drupal/modules!field_ui!field_ui.api.php/function/hook_field_instance_settings_form/7.x 
+ */
+function dlts_track_field_instance_settings_form($field, $instance) {
+  return array(
+    'display' => array(
+      '#tree' => TRUE,
+    ),
+    'attributes' => array(
+      '#tree' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function dlts_track_element_info() {
+  return array(
+    'dlts_track_field' => array(
+      '#input' => TRUE,
+    )
+  );
+}
+
+/**
+ * Process the link type element before displaying the field.
+ *
+ * Build the form element. When creating a form using FAPI #process,
+ * note that $element['#value'] is already set.
+ *
+ * The $fields array is in $complete_form['#field_info'][$element['#field_name']].
+ */
+function dlts_track_field_process($element, $form_state, $complete_form) {
+  $element['src'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Specifies the URL of the text track data'),
+    '#required' => FALSE,
+    '#default_value' => NULL,
+  );
+  $element['kind'] = array(
+    '#type' => 'varchar',
+    '#title' => t('Specifies the kind of text track'),
+    '#required' => FALSE,
+    '#default_value' => NULL,
+  );
+
+  $element['srclang'] = array(
+    '#type' => 'varchar',
+    '#title' => t('Specifies the language of the text track'),
+    '#required' => FALSE,
+    '#default_value' => NULL,
+  );
+
+  $element['label'] = array(
+    '#type' => 'varchar',
+    '#title' => t('Provides a user-readable title for the track'),
+    '#required' => FALSE,
+    '#default_value' => NULL,
+  );
+
+  $element['default'] = array(
+    '#type' => 'varchar',
+    '#title' => t("Default track if the user's preferences do not indicate that another track would be more appropriate"),
+    '#required' => FALSE,
+    '#default_value' => NULL,
+  );
+  return $element;
+}
+
+/**
+ * Theme functions
+ */
+function theme_dlts_track_media($vars) {
+
+  if (isset($vars['default'])) {
+    unset($vars['default']);
+  }
+
+  unset($vars['theme_hook_original']);
+
+  // HTML markup
+  $render_array = array(
+    'span-0' => array(
+      '#theme' => 'html_tag',
+      '#tag' => 'track',
+      '#value' => '',
+      '#attributes' => $vars,
+    ),
+  );
+
+  return drupal_render($render_array);
+
+}

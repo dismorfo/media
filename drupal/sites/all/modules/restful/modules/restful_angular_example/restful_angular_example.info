@@ -1,0 +1,14 @@
+name = RESTful AngularJs example
+description = Example module for the RESTful AngularJs module.
+core = 7.x
+dependencies[] = entity_validator
+dependencies[] = entity_validator_example
+dependencies[] = jquery_update
+dependencies[] = restful
+dependencies[] = restful_example
+
+; Information added by Drupal.org packaging script on 2019-03-20
+version = "7.x-1.10"
+core = "7.x"
+project = "restful"
+datestamp = "1553083388"

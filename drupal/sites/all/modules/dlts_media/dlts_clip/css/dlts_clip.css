@@ -1,0 +1,83 @@
+.dlts_media , .dlts_playlist, .dlts_clip { 
+  width: 700px;
+  height: 450px;
+  margin: 10px auto;
+  display: block;
+  background-color: #000;
+  background-repeat: no-repeat;
+  background-size: 100%;
+}
+
+.dlts_media .play, 
+.dlts_playlist .play, 
+.dlts_clip .play { 
+  background-image: url('../images/play_large.png') ;
+  width: 83px;
+  height: 83px;
+  border: 0;
+  display: block;
+  position: relative;
+  top: 50%;
+  left: 50%;
+  /* bring your own prefixes */
+  transform: translate(-50%, -50%);
+}
+
+.stop {
+  cursor: pointer;
+}
+
+.dlts_playlist.flowplayer.fp-default-playlist .fp-controls .fp-elapsed {
+  margin-left: 2.3em;
+}
+
+.dlts_playlist.flowplayer.fp-default-playlist .fp-controls .fp-next {
+  opacity: 1;
+  font-size: 62%;
+  top: .95em;
+  right: initial;
+  left: 5em;
+}
+
+.dlts_playlist.flowplayer.fp-default-playlist .fp-controls .fp-prev {
+  opacity: 1;
+  font-size: 62%;
+  top: .95em;
+  right: initial;
+  left: 3.2em;
+}
+
+html.embed, .embed body {
+  overflow: hidden;
+}
+
+html.embed ,
+.embed body,
+.embed .flowplayer,
+.embed .dlts_clip,
+.embed .dlts_playlist {
+  width: 100%;
+  height: 100%;
+  margin:0;
+  padding:0;
+}
+
+.embed video {
+  position: absolute;
+  top:0;
+  left:0;
+  width:100%;
+  background-position: center;
+}
+
+.embed .dlts_playlist:hover {
+  cursor: pointer;
+}
+
+.embed .dlts_clip:hover {
+  cursor: pointer;
+}
+
+.embed .flowplayer {
+  border-radius: 0;
+}

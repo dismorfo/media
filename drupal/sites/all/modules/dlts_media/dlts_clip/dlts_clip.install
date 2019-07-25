@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Install file for the clip module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ * https://api.drupal.org/api/drupal/modules!field!field.api.php/function/hook_field_schema/7
+ */
+function dlts_clip_field_schema($field) {
+  return array(
+    'columns' => array(
+      'identifier' => array(
+        'type' => 'varchar',
+        'length' => 200,
+        'not null' => TRUE,
+      ),
+      /** Flash Media Manifest (F4M) */
+      'f4m' => array(
+        'type' => 'varchar',
+        'length' => 2048,
+        'not null' => TRUE,
+      ),
+      /** M3U Playlist */
+      'm3u' => array(
+    	'type' => 'varchar',
+    	'length' => 2048,
+    	'not null' => TRUE,
+      ),
+      /** Progressive Download; media file over HTTP */
+      'pd' => array(
+        'type' => 'varchar',
+    	  'length' => 2048,
+    	  'not null' => FALSE,
+      ),
+    ),
+    'indexes' => array(
+      'identifier' => array('identifier'),
+    ),
+  );
+}

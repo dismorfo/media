@@ -1,0 +1,416 @@
+<?php
+
+/**
+ * Implements hook_custom_theme().
+ * http://api.drupal.org/api/drupal/modules--system--system.api.php/function/hook_custom_theme/7
+ */
+function dlts_media_api_custom_theme() {
+  if ( isset( $_GET['ctheme'] ) ) return filter_xss( $_GET['ctheme'] );  
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function dlts_media_api_theme() {
+  return array(
+    'dlts_media_api_oembed' => array(
+      'arguments' => array(
+        'url' => NULL,
+        'width' => NULL,
+        'height' => NULL,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function dlts_media_api_menu() {
+  return array(
+
+    'content.json' => array(
+      'title' => 'All media in JSON format',
+      'access arguments' => array('access content'),
+      'page callback' => 'dlts_media_api_items',
+      'delivery callback' => 'dlts_utilities_deliver_json',
+    ),
+
+    'subjects.json' => array(
+      'title' => 'All subject in JSON format',
+      'access arguments' => array('access content'),
+      'page callback' => 'dlts_media_api_items_subjects',
+      'delivery callback' => 'dlts_utilities_deliver_json',
+    ),
+
+    'media/%dlts_media_load/mode/embed' => array(
+      'title' => 'Embed',
+      'access arguments' => array('request oembed'),
+      'page arguments' => array(1),
+      'page callback' => 'dlts_media_api_embed_using_id',
+      'delivery callback' => 'dlts_utilities_deliver_json',
+    ),
+  );
+
+}
+
+/**
+ * A wildcard loader for dlts_book nodes, using the book identifier.
+ *
+ * @parameter $identifier
+ *  The value of field_identifier for a dtls_book node.
+ *
+ * @return
+ * A node object with the given value for field_identifier.
+ *
+ * @todo
+ * field_identifier is supposed to be unique across all books, but we do
+ * no checking of this assumption.
+ * @todo
+ * Does the query need to be tagged as node_access? We're checking node_access
+ * via the menu system, but since the loader is called before access is
+ * checked, adding a check here might save an entity_load if the user's not
+ * going to have access anyway, at the cost of an extra JOIN here.
+ */
+function dlts_media_load($identifier) {
+
+  $query = new EntityFieldQuery;
+  
+  $identifier = filter_xss($identifier);
+  
+  $content_type = 'beard_interview'; // for now
+  
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', $content_type)
+    ->propertyCondition('status', 1)
+    ->fieldCondition('field_identifier', 'value', $identifier, '=')
+    ->execute();
+
+  if (!empty($result['node'])) {
+
+    $keys = array_keys($result['node']);
+	
+    return node_load( array_pop( $keys ) );
+  } else {
+    /** If the query returns no result, there's no item with the given identifier. */
+    return filter_xss($identifier);
+  }
+}
+
+function dlts_media_api_items_subjects($start = 0, $length = 100) {
+
+  global $language;
+  
+  $request_uri = drupal_parse_url(request_uri());
+  
+  $content_type = 'beard_interview_subject';
+  
+  $countQuery = new EntityFieldQuery();
+  
+  $entitiesQuery = new EntityFieldQuery();  
+  
+  $count = $countQuery->entityCondition('entity_type', 'node')
+                      ->entityCondition('bundle', $content_type)
+                      ->propertyCondition('status', 1)
+                      ->count()
+                      ->execute();
+
+  $entities = $entitiesQuery->entityCondition('entity_type', 'node')
+                            ->entityCondition('bundle', $content_type)
+                            ->propertyCondition('status', 1)
+                            ->range($start, $length)
+                            ->execute();
+                    
+  $keys = array_keys($entities['node']);
+  
+  $nodes = entity_load('node', $keys);
+  
+  // Try to mimic Solr response
+  $response = array(
+    'response' => array(
+      'numFound' => $count,
+      'start' => $start,
+      'docs' => array()
+    )
+  );
+  
+  foreach ( (array) $nodes as $node) {
+    $response['response']['docs'][] = dlts_media_api_metadata_subjects( $node );
+  }
+  
+  return $response;
+
+}
+
+function dlts_media_api_items($start = 0, $length = 100) {
+
+  global $language;
+  
+  $request_uri = drupal_parse_url(request_uri());
+  
+  $content_type = 'beard_interview'; // for now
+  
+  if ( isset($request_uri['query']) ) {
+    if ( isset($request_uri['query']['rows']) && is_numeric($request_uri['query']['rows']) ) {
+      $length = $request_uri['query']['rows'];
+    }
+    if ( isset($request_uri['query']['start']) && is_numeric($request_uri['query']['start']) ) {
+      $start = $request_uri['query']['start'];
+    }
+  }
+  
+  $countQuery = new EntityFieldQuery();
+  
+  $entitiesQuery = new EntityFieldQuery();  
+  
+  $count = $countQuery->entityCondition('entity_type', 'node')
+                      ->entityCondition('bundle', $content_type)
+                      ->propertyCondition('status', 1)
+                      ->count()
+                      ->execute();
+
+  $entities = $entitiesQuery->entityCondition('entity_type', 'node')
+                            ->entityCondition('bundle', $content_type)
+                            ->propertyCondition('status', 1)
+                            ->range($start, $length)
+                            ->execute();
+                    
+  $keys = array_keys($entities['node']);
+  
+  $nodes = entity_load('node', $keys);
+  
+  // Try to mimic Solr response
+  $response = array(
+    'response' => array(
+      'numFound' => $count,
+      'start' => $start,
+      'docs' => array()
+    )
+  );
+  
+  foreach ( (array) $nodes as $node) {
+    $response['response']['docs'][] = dlts_media_api_metadata( $node );
+  }
+  
+  return $response;
+
+}
+
+/** 
+ * Supports the 'Services' style embed
+ */
+function dlts_media_api_embed_using_uri() {
+  $lookup_results = dlts_media_api_oembed_lookup();
+  if ( $lookup_results['code'] !== 200 ) {
+    return $lookup_results;
+  }
+  $nid = $lookup_results['nid'];
+  $bnode = node_load($nid);
+  return dlts_media_api_embed_response( $bnode, $lookup_results );
+}
+
+/**
+ * Supports the REST style embed
+ */
+function dlts_media_api_embed_using_id( $node ) {
+  
+  if ( is_object( $node ) ) {
+    return dlts_media_api_embed_response( $node );
+  }
+
+  return MENU_NOT_FOUND;
+  
+}
+
+function dlts_media_api_embed_response ( $node ) {}
+
+/**
+ * Generate metadata about a item.
+ *
+ * @param $dlts_book
+ * A dlts_media node object
+ * @return
+ * A keyed array to be converted into JSON
+ *
+ */
+function dlts_media_api_metadata ( $node ) {
+  
+  $type = dlts_utilities_content_types_type( $node->type );
+  
+  $fields = array();
+  
+  $metadata = array();
+  
+  $subjects = array();
+  
+  $collections = array();
+
+  $base_url = url('', array('absolute' => TRUE));
+
+  $ewrapper = entity_metadata_wrapper('node', $node);
+  
+  $representative_image = array();
+  
+  foreach ( $type['fields'] as $field ) {
+  
+    $name = str_replace('field_', '', $field['field_name']);
+
+    $raw_value = $ewrapper->$field['field_name']->value();
+    
+    if ( $field['type'] == 'options_buttons' ) {
+      $value = $field['settings']['allowed_values'][$raw_value];
+    }
+    
+    else if ( $field['type'] == 'link_field' && isset( $raw_value['url'] ) ) {
+    
+      $value = $raw_value['url'];
+    
+    }    
+    
+    else if ( $field['type'] == 'file_generic' ) {
+    
+      $value = array();
+    
+      foreach ( (array) $raw_value as $pdf_file) {
+        $value[] = file_create_url($pdf_file['uri']);
+      }  
+      
+    } 
+    
+    else if ( $field['type'] == 'date_text' ) {
+      $raw_value['value'];
+    }        
+    
+    else if ( $field['type'] == 'image_image' ) {
+      preg_match( '/representative_image/', $field['field_name'], $matches ) ;
+      if ( $matches ) {
+        $styles = array_keys ( image_styles() ) ;
+        foreach ( $styles as $style ) {
+          $representative_image[$style] = image_style_url( $style, $raw_value['uri'] ) ;	  
+  	    }
+      }
+      
+      $value = file_create_url($raw_value['uri']);
+      
+    }
+    
+    else if ( $field['type'] == 'taxonomy_autocomplete' ) {
+      
+      $value = array();
+      
+      foreach ($raw_value as $taxonomy) {
+        $value[] = $taxonomy->name;
+      }
+      
+    }
+    
+    else {
+      $value = $raw_value;
+    }
+    
+    $fields[$name] = array ( 
+      'label' => $field['label'], 
+      'value' => (array) $value, 
+      //'raw_value' => $raw_value,       
+      //'type' => $field['type'], 
+      //'machine_name' => $field['field_name'], 
+    );
+
+  }
+  
+  $type = $node->type ;
+  
+  preg_match( '/beard_interview/', $type, $rosie_interview_matches ) ;
+
+  if ( $rosie_interview_matches ) {
+    $type = 'video' ;
+  }
+  
+  $identifier = $fields['identifier']['value'][0];
+
+  return array(
+    'entity_title' => !empty( $title ) ? $title : $node->title,
+    'identifier' => $identifier,
+    'entity_path' => url('node/' . $node->nid, array('absolute' => TRUE)),
+    'base_url' => $base_url,
+    'language' => ( $node->language == LANGUAGE_NONE ) ? 'en' : $node->language  ,
+    'status' => $node->status,
+    'type' => $type,   
+    'representative_image' => $representative_image,
+    'metadata' => $fields,
+  );
+
+}
+
+function dlts_media_api_metadata_subjects ( $node ) {
+  
+  // URL path settings	path
+  
+  $ewrapper = entity_metadata_wrapper('node', $node);
+  
+  // Bibliography
+  $bibliography_value = $ewrapper->field_attached_bibliography->value();
+  
+  $bibliography = array(
+    'filename' => $bibliography_value['filename'],
+    'filemime' => $bibliography_value['filemime'],
+    'uri' => file_create_url($bibliography_value['uri']),
+    'filesize' => $bibliography_value['filesize'],
+  );  
+  
+  // Bio
+  $bio = $ewrapper->field_bio->value();
+
+  // Full name
+  $name = $node->title;
+
+  // Sort	
+  $sort = $ewrapper->field_sort->value();
+
+  // Citation Link	field_handle
+  $handle_value = $ewrapper->field_handle->value();
+  
+  $handle = $handle_value['url'];
+
+  // Interviews	field_interviews
+  $interviews_value = $ewrapper->field_interviews->value();
+  $interviews = array();  
+
+  $subjects = array(
+    'bibliography' => $bibliography,
+    'bio' => $bio,
+    'name' => $name,
+    'sort' => $sort,
+    'handle' => $handle,
+  );
+
+  foreach ($interviews_value as $interview) {
+    $interviews_wrapper = entity_metadata_wrapper('node', $interview);
+    $transcript_value = $interviews_wrapper->field_transcript->value();
+    $interviews_handle = $interviews_wrapper->field_handle->value();
+    $interviews[] = array(
+      'transcript' => array(
+        'filename' => $transcript_value['filename'],
+        'filemime' => $transcript_value['filemime'],
+        'uri' => file_create_url($transcript_value['uri']),
+        'filesize' => $transcript_value['filesize'],
+      ),  
+      'identifier' => $interviews_wrapper->field_identifier->value(),
+      'handle' => $interviews_handle['url'],
+      'title' => $interview->title,
+    );
+  }
+
+  $subjects['interviews'] = $interviews;
+
+  return $subjects;
+
+}
+
+/**
+ * Themes functions
+ */
+function theme_dlts_media_api_oembed( $arguments ) {
+  return '<iframe id="dlts-media-embed" src="' . $arguments['url'] .'" width="' . $arguments['width'] .'" height="' . $arguments['height'] .'"><p>' . t('Your browser does not support iframes.') . '</p></iframe>';
+}

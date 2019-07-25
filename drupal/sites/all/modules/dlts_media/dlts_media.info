@@ -1,0 +1,4 @@
+name = DLTS Media
+description = Structured data about media clip.
+core = 7.x
+package = DLTS

@@ -1,0 +1,4 @@
+name = dlts_bitstream 
+description = Structured data about media clip.
+core = 7.x
+package = DLTS

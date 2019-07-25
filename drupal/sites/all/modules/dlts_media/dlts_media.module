@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * Enable Media Views
+ */
+function dlts_media_update_7003(&$sandbox) {
+  $modules = array('media_views');
+  $enable_dependencies = TRUE;
+  module_enable($modules, $enable_dependencies);
+}
+
+/**
+ * Disable and uninstall the module.
+ */
+function dlts_media_update_7004(&$sandbox) {
+  $modules = array('dlts_ga', 'dlts_bitstream', 'googleanalytics', 'dlts_interview');
+  module_disable($modules);
+  drupal_uninstall_modules($modules);
+  drupal_flush_all_caches();
+}

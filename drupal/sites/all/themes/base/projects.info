@@ -1,0 +1,19 @@
+name = Projects
+description = Clean admin theme.
+base theme = rubik
+core = 7.x
+engine = phptemplate
+
+regions[content] = Content
+regions[help] = Help
+regions[page_top] = Page top
+regions[page_bottom] = Page bottom
+
+scripts[] = js/projects.js
+scripts[] = js/colorbox/jquery.colorbox-min.js
+stylesheets[screen][] = projects.css
+stylesheets[screen][] = js/colorbox/example2/colorbox.css
+
+; Support shortcut module links
+settings[shortcut_module_link] = 1
+

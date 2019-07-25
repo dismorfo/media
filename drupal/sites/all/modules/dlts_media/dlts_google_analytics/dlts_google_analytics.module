@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function dlts_google_analytics_menu() {
+  return array(
+    'admin/config/system/dlts-google-analytics' => array(
+      'title' => 'DLTS - Google Analytics',
+      'description' => 'Configure settings related to Google Analytics.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('dlts_google_analytics_config'),
+      'access arguments' => array('access administration pages'),
+      'file' => 'inc/admin.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function dlts_google_analytics_theme($existing, $type, $theme, $path) {
+  return array(
+  	'dlts_google_analytics_script' => array(
+  	  'template' => 'templates/code',
+  	),
+  );
+}
+
+function dlts_google_analytics_add_google_analytics_code() {
+  $conf = &drupal_static(__FUNCTION__);
+  if (!isset($conf)) {
+    $conf = array();
+    $conf['ua'] = variable_get('dlts_google_analytics_code');
+    $conf['dimensions'] = array();
+    $conf['debug'] = variable_get('dlts_google_analytics_debug', 0);
+    $conf['enable'] = variable_get('dlts_google_analytics_enable', 0);
+	  $conf['cookieDomain'] = variable_get('dlts_google_analytics_cookiedomain', 'auto');
+  	$conf['anonymizeIp'] = variable_get('dlts_google_analytics_anonymizeip', 'true');
+	  if ($conf['enable']) {
+	    /** just add when user is not admin or debug is on */
+	    if ($conf['debug']) {
+	      drupal_add_js('console.log("Google Analytics debug mode: on.");', 'inline');
+  	    drupal_add_js('console.log("Google Analytics UA: ' . $conf['ua']. '.");', 'inline');
+	    }
+	    if ($conf['debug'] || user_is_anonymous()) {
+		    drupal_add_js(theme('dlts_google_analytics_script'), 'inline');
+        drupal_add_js(array('dlts_google_analytics' => $conf), 'setting');
+		  }
+	  }
+  }
+  return $conf;
+}
+
+/**
+ * Implementation of hook_node_view()
+ * Act on a node that is being assembled before rendering.
+ * See: https://api.drupal.org/api/drupal/modules%21node%21node.api.php/function/hook_node_view/7
+ */
+function dlts_google_analytics_node_view($node, $view_mode, $langcode) {
+  $conf = dlts_google_analytics_add_google_analytics_code();
+	if ($conf['enable']) {
+	  if (field_info_instance('node', 'field_collection', $node->type)) {
+	    $wrapper = entity_metadata_wrapper('node', $node);
+	    $collections = $wrapper->field_collection->value();
+	    foreach ($collections as $collection) {
+        $collection_wrapper = entity_metadata_wrapper('node', $collection);
+        if (!isset($conf['dimensions']['collections'])) {
+          $conf['dimensions']['collections'] = array();
+        }
+		    $conf['dimensions']['collections'][] = array(
+				  'name' => $collection_wrapper->field_name->value(),
+				  'code' => $collection_wrapper->field_code->value(),
+		    );
+		    unset($collection_wrapper);
+		  }
+	  }
+    if (isset($conf['enable'])) {
+	    drupal_add_js(array('dlts_google_analytics' => $conf), 'setting');
+	  }
+	}
+}

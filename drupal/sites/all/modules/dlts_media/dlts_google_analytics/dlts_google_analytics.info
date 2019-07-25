@@ -1,0 +1,6 @@
+name = DLTS Google Analytics
+description = Google Analytics implementation
+core = 7.x
+package = DLTS
+
+scripts[] = js/dlts_google_analytics.js
