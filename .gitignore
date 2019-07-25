@@ -1,19 +1,19 @@
 # Ignore site
-drupal/sites/default
+sites/default
 
 # Ignore configuration files that may contain sensitive information.
-drupal/sites/*/*settings*.php
-drupal/sites/example.sites.php
+sites/*/*settings*.php
+sites/example.sites.php
 
 # Ignore paths that contain generated content.
-drupal/files/
-drupal/sites/*/files
-drupal/sites/*/private
-drupal/sites/*/translations
+files/
+sites/*/files
+sites/*/private
+sites/*/translations
 
 .DS_Store
 
 .env
 
 database/*.sql
-
+*.sql
